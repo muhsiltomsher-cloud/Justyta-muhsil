@@ -12,15 +12,11 @@
    
     <link rel="stylesheet" href="{{ asset('assets/css/web/custom.css') }}">
     
-
-    <link type="text/css" rel="stylesheet" href="https://source.zoom.us/2.14.0/css/bootstrap.css"/>
-    
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <link rel="stylesheet" href="{{ asset('assets/css/select2.min.css') }}">
     <script src="{{ asset('assets/js/jquery-3.5.1.min.js') }}"></script>
-
-    
+    <script src="https://source.zoom.us/videosdk/2.15.0/lib.js"></script>
     
 
 
@@ -154,9 +150,9 @@
                 </div>
 
                 <!-- Video -->
-                <div id="videoArea" class="hidden">
-                    <div id="videoContainer"></div>
-                    <button id="leaveBtn">Leave Meeting</button>
+                <div id="videoArea" class="hidden mt-4">
+                    <div id="videoContainer" class="w-full h-[500px] bg-black rounded relative"></div>
+                    <button id="leaveBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl shadow-md mt-4 transition">Leave Meeting</button>
                 </div>
             </div>
 
@@ -611,7 +607,7 @@
                     
                     // **IMPORTANT:** Ensure the video container has a layout (e.g., flex) and dimensions
                     // so the video wrappers can render side-by-side correctly.
-                    container.className = 'flex justify-center items-center h-[500px] w-full p-4'; 
+                    container.className = 'flex justify-center items-center h-[500px] w-full p-4 bg-black rounded relative';
 
                     
                     /**
