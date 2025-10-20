@@ -44,8 +44,8 @@
             </div>
 
             <div id="videoArea" class="hidden mt-4">
-                <div id="videoContainer" class="w-full h-[480px] bg-black rounded"></div>
-                <button id="leaveBtn" class="bg-red-600 text-white px-3 py-1 rounded mt-2">Leave Call</button>
+                <div id="videoContainer" class="w-full h-[480px] bg-black rounded relative"></div>
+                <button id="leaveBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl shadow-md mt-4 transition">Leave Call</button>
             </div>
 
 
@@ -103,138 +103,183 @@
         //     });
         // }
 
+        const VIEW_MODE_CONTAIN = 2;
+
         async function checkCameraAccess() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 stream.getTracks().forEach(track => track.stop());
                 console.log("Camera access granted");
                 return true;
             } catch (err) {
                 console.error("Camera access denied or error:", err);
-                alert("Please grant camera access to start the video.");
+                alert("Please grant camera and microphone access to start the video.");
                 return false;
             }
         }
 
+        function displayMessage(message) {
+            const container = document.getElementById('videoContainer');
+            let messageDiv = document.getElementById('statusMessage');
+            
+            if (!container) {
+                console.error("Cannot display message: videoContainer not found.");
+                return;
+            }
+
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'statusMessage';
+                messageDiv.className = 'text-red-600 font-semibold p-4 border border-red-300 rounded-lg bg-red-50 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-lg z-50';
+                container.appendChild(messageDiv);
+            }
+            
+            messageDiv.textContent = message;
+            
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+
         window.startZoomVideo = async function (data, username) {
-            // Verify camera access
             if (!(await checkCameraAccess())) {
                 return;
             }
 
             let client;
+            const container = document.getElementById('videoContainer');
+            const videoArea = document.getElementById('videoArea');
+
             try {
-                // Check SharedArrayBuffer support
-                const isSharedArrayBufferSupported = typeof SharedArrayBuffer === 'function';
-                console.log("SharedArrayBuffer supported:", isSharedArrayBufferSupported);
-                
                 console.log("Meeting details:", data);
 
-                // Initialize Zoom Video SDK
                 client = ZoomVideo.createClient();
                 await client.init("en-US", "Global", { debug: true });
                 console.log("Zoom client initialized");
 
-                // Join the meeting
                 await client.join(data.meeting_number, data.signature, username, '');
-                console.log("Joined meeting, userId:", client.getCurrentUserInfo().userId);
+                const currentUserId = client.getCurrentUserInfo().userId;
+                console.log("Joined meeting, userId:", currentUserId);
 
                 const stream = client.getMediaStream();
 
-                // --- Start of Corrected Section ---
-
-                // Clear and prepare video container
-                const container = document.getElementById('videoContainer');
                 if (!container) {
                     throw new Error("Video container not found");
                 }
                 container.innerHTML = '';
+                container.className = 'flex justify-center items-center h-[480px] w-full p-4';
 
-                // Create and configure self video element FIRST
-                const selfVideoElement = document.createElement("video");
-                selfVideoElement.id = "self-video";
-                selfVideoElement.autoplay = true;
-                selfVideoElement.muted = true;
-                selfVideoElement.playsInline = true;
-                selfVideoElement.style.width = "400px";
-                selfVideoElement.style.height = "300px";
-                selfVideoElement.style.border = "2px solid blue"; // Debugging border
-                container.appendChild(selfVideoElement);
+                const createVideoWrapper = (userId, isSelf = false) => {
+                    const idPrefix = isSelf ? 'self' : 'remote';
+                    let videoWrapper = document.getElementById(`${idPrefix}-video-wrapper-${userId}`);
+                    
+                    if (videoWrapper) return videoWrapper;
+                    
+                    videoWrapper = document.createElement("div");
+                    videoWrapper.id = `${idPrefix}-video-wrapper-${userId}`;
+                    
+                    const borderColor = isSelf ? 'border-blue-500' : 'border-green-500';
+                    videoWrapper.className = `w-1/2 h-full rounded-lg shadow-xl mx-2 border-4 ${borderColor} overflow-hidden relative`;
+                    
+                    container.appendChild(videoWrapper);
+                    return videoWrapper;
+                };
 
-                // Verify video element
-                console.log("Self video element created:", selfVideoElement);
+                const selfVideoWrapper = createVideoWrapper(currentUserId, true);
 
-                // 💡 *THE FIX:* Start video and render the self-view in one step
-                await stream.startVideo({ videoElement: selfVideoElement });
-                console.log("Video stream started and attached to self-view element");
+                await stream.startVideo();
+                await stream.startAudio();
+                console.log("Video and audio stream started");
 
-                // The old stream.attachVideo call for the self-view is no longer needed.
+                await stream.renderVideo(selfVideoWrapper, currentUserId, VIEW_MODE_CONTAIN);
+                console.log("Local video stream rendered.");
 
-                // --- End of Corrected Section ---
-
-                // Handle remote participants
-                client.on('user-added', async (payload) => {
+                client.on('user-video-status-change', async (payload) => {
                     const remoteUser = payload.user || payload;
                     const remoteUserId = remoteUser.userId;
-                    console.log("Remote user joined:", remoteUserId);
+                    const videoStatus = payload.action;
+                    
+                    if (remoteUserId === currentUserId) return;
 
-                    if (!remoteUserId) return;
+                    console.log(`User ${remoteUserId} video status changed to: ${videoStatus}`);
 
-                    const remoteVideoElement = document.createElement("video");
-                    remoteVideoElement.id = `video-${remoteUserId}`;
-                    remoteVideoElement.autoplay = true;
-                    remoteVideoElement.playsInline = true;
-                    remoteVideoElement.style.width = "400px";
-                    remoteVideoElement.style.height = "300px";
-                    remoteVideoElement.style.border = "2px solid green"; // Debugging border
-                    container.appendChild(remoteVideoElement);
-
-                    try {
-                        // This is correct for remote users
-                        await stream.attachVideo(remoteUserId, remoteVideoElement);
-                        console.log(`Remote video attached for user ${remoteUserId}`);
-                    } catch (err) {
-                        console.error(`Failed to attach remote video for ${remoteUserId}:`, err);
+                    if (videoStatus === 'Active') {
+                        const remoteVideoWrapper = createVideoWrapper(remoteUserId, false);
+                        try {
+                            await stream.renderVideo(remoteVideoWrapper, remoteUserId, VIEW_MODE_CONTAIN);
+                            console.log(`Remote video rendered for user ${remoteUserId}`);
+                        } catch (err) {
+                            console.error(`Failed to render remote video for ${remoteUserId}:`, err);
+                        }
+                    } else if (videoStatus === 'Inactive') {
+                        await stream.stopRenderVideo(remoteUserId);
+                        console.log(`Remote video render stopped for user ${remoteUserId}`);
                     }
                 });
 
-                // Handle remote user leaving
+                const existingUsers = client.getAllUser();
+                console.log("Existing participants:", existingUsers);
+
+                if (existingUsers.length > 1) {
+                    const remoteUser = existingUsers.find(u => u.userId !== currentUserId);
+                    if (remoteUser) {
+                        console.log("Remote user (Lawyer) already in meeting:", remoteUser.userId);
+                        
+                        const userInfo = client.getUser(remoteUser.userId);
+                        const remoteVideoWrapper = createVideoWrapper(remoteUser.userId, false);
+
+                        if (userInfo?.bVideoOn) {
+                            await stream.renderVideo(remoteVideoWrapper, remoteUser.userId, VIEW_MODE_CONTAIN);
+                            console.log("Immediately rendered video of existing user.");
+                        }
+                    }
+                }
+
+                client.on('user-added', async (payload) => {
+                    const remoteUser = payload.user || payload;
+                    if (remoteUser.userId === currentUserId) return;
+                    
+                    console.log("Remote user joined:", remoteUser.userId);
+                    createVideoWrapper(remoteUser.userId, false);
+                });
+
                 client.on('user-removed', async (payload) => {
                     const remoteUser = payload.user || payload;
                     const remoteUserId = remoteUser.userId;
                     console.log("Remote user left:", remoteUserId);
 
-                    if (!remoteUserId) return;
-                    
-                    const remoteVideoElement = document.getElementById(`video-${remoteUserId}`);
-                    if (remoteVideoElement) {
-                        remoteVideoElement.remove();
+                    const remoteVideoWrapper = document.getElementById(`remote-video-wrapper-${remoteUserId}`);
+                    if (remoteVideoWrapper) {
+                        await stream.stopRenderVideo(remoteUserId);
+                        remoteVideoWrapper.remove();
                     }
                 });
 
-                // Show video area
-                const videoArea = document.getElementById('videoArea');
                 if (videoArea) {
                     videoArea.classList.remove('hidden');
                 } else {
                     console.error("Video area element not found");
                 }
 
-                // Handle leave meeting
                 const leaveBtn = document.getElementById('leaveBtn');
                 if (leaveBtn) {
                     leaveBtn.addEventListener('click', async () => {
                         try {
+                            await stream.stopRenderVideo(currentUserId);
                             await stream.stopVideo();
                             await stream.stopAudio();
                             await client.leave();
                             console.log("Left meeting");
+                            
                             if (videoArea) {
                                 videoArea.classList.add('hidden');
                             }
-                            container.innerHTML = ''; // Clear videos
+                            container.innerHTML = '';
                         } catch (err) {
                             console.error("Error leaving meeting:", err);
+                            displayMessage("Error leaving the meeting. Please refresh the page manually.");
                         }
                     });
                 } else {
@@ -242,8 +287,8 @@
                 }
             } catch (error) {
                 console.error("Zoom SDK Error:", error);
-                // alert(`Failed to start Zoom meeting: ${error.message || 'Unknown error'}`);
-        }
-    };
+                displayMessage(`Failed to start Zoom meeting: ${error.message || 'Unknown error'}. Check console for details.`);
+            }
+        };
     </script>
 @endsection
