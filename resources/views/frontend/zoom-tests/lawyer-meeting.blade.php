@@ -191,25 +191,30 @@
 
                 const createVideoElement = (userId, isSelf = false) => {
                     const idPrefix = isSelf ? 'self' : 'remote';
-                    let existingCanvas = document.getElementById(`${idPrefix}-video-canvas-${userId}`);
+                    let existingElement = document.getElementById(`${idPrefix}-video-element-${userId}`);
                     
-                    if (existingCanvas) return existingCanvas;
+                    if (existingElement) return existingElement;
                     
                     const videoWrapper = document.createElement("div");
                     videoWrapper.id = `${idPrefix}-video-wrapper-${userId}`;
                     const borderColor = isSelf ? 'border-blue-500' : 'border-green-500';
                     videoWrapper.className = `w-1/2 h-full rounded-lg shadow-xl mx-2 border-4 ${borderColor} overflow-hidden relative`;
                     
-                    const canvas = document.createElement("canvas");
-                    canvas.id = `${idPrefix}-video-canvas-${userId}`;
-                    canvas.className = 'w-full h-full object-contain';
+                    const videoElement = document.createElement(isSelf ? "video" : "canvas");
+                    videoElement.id = `${idPrefix}-video-element-${userId}`;
+                    videoElement.className = 'w-full h-full object-contain';
+                    if (isSelf) {
+                        videoElement.autoplay = true;
+                        videoElement.muted = true;
+                        videoElement.playsInline = true;
+                    }
                     
-                    videoWrapper.appendChild(canvas);
+                    videoWrapper.appendChild(videoElement);
                     container.appendChild(videoWrapper);
-                    return canvas;
+                    return videoElement;
                 };
 
-                const selfVideoCanvas = createVideoElement(currentUserId, true);
+                const selfVideoElement = createVideoElement(currentUserId, true);
 
                 log('Starting video and audio...');
                 await stream.startVideo();
@@ -219,7 +224,7 @@
                 startCallTimer();
 
                 log('Rendering lawyer video...');
-                await stream.renderVideo(selfVideoCanvas, currentUserId, 1280, 720, 0, 0, 3);
+                await stream.renderVideo(selfVideoElement, currentUserId, 1280, 720, 0, 0, 3);
                 log('✓ Lawyer video rendered');
 
                 client.on('user-added', async (payload) => {
