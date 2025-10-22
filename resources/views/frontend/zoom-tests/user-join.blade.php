@@ -188,39 +188,14 @@
                 stream = client.getMediaStream();
 
                 container.innerHTML = '';
-                container.className = 'flex justify-center items-center h-[600px] w-full p-4 bg-black rounded relative';
-
-                const createVideoElement = (userId, isSelf = false) => {
-                    const idPrefix = isSelf ? 'self' : 'remote';
-                    let existingElement = document.getElementById(`${idPrefix}-video-element-${userId}`);
-                    
-                    if (existingElement) {
-                        log(`Reusing existing ${existingElement.tagName} element for user ${userId}`);
-                        return existingElement;
-                    }
-                    
-                    const videoWrapper = document.createElement("div");
-                    videoWrapper.id = `${idPrefix}-video-wrapper-${userId}`;
-                    const borderColor = isSelf ? 'border-green-500' : 'border-blue-500';
-                    videoWrapper.className = `w-1/2 h-full rounded-lg shadow-xl mx-2 border-4 ${borderColor} overflow-hidden relative`;
-                    
-                    const videoElement = document.createElement(isSelf ? "video" : "canvas");
-                    videoElement.id = `${idPrefix}-video-element-${userId}`;
-                    videoElement.className = 'w-full h-full object-contain';
-                    if (isSelf) {
-                        videoElement.autoplay = true;
-                        videoElement.muted = true;
-                        videoElement.playsInline = true;
-                    }
-                    
-                    videoWrapper.appendChild(videoElement);
-                    container.appendChild(videoWrapper);
-                    
-                    log(`Created ${videoElement.tagName} element for user ${userId} (isSelf: ${isSelf})`);
-                    return videoElement;
-                };
-
-                const selfVideoWrapper = document.getElementById('videoContainer');
+                container.style.display = 'flex';
+                container.style.flexDirection = 'row';
+                container.style.justifyContent = 'center';
+                container.style.alignItems = 'center';
+                container.style.gap = '1rem';
+                container.style.padding = '1rem';
+                container.style.backgroundColor = '#000';
+                container.style.borderRadius = '0.5rem';
 
                 log('Starting video and audio...');
                 await stream.startVideo();
@@ -231,13 +206,14 @@
 
                 log('Attaching user video...');
                 const selfVideoPlayer = await stream.attachVideo(currentUserId, 3);
-                selfVideoPlayer.style.width = '50%';
-                selfVideoPlayer.style.height = '100%';
+                selfVideoPlayer.style.width = '45%';
+                selfVideoPlayer.style.height = '550px';
                 selfVideoPlayer.style.border = '4px solid #10b981';
                 selfVideoPlayer.style.borderRadius = '0.5rem';
                 selfVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-                selfVideoPlayer.style.margin = '0 0.5rem';
-                selfVideoWrapper.appendChild(selfVideoPlayer);
+                selfVideoPlayer.style.flexShrink = '0';
+                selfVideoPlayer.style.objectFit = 'cover';
+                container.appendChild(selfVideoPlayer);
                 log('✓ User video attached');
 
                 const existingUsers = client.getAllUser();
@@ -251,13 +227,14 @@
 
                         if (userInfo?.bVideoOn) {
                             const lawyerVideoPlayer = await stream.attachVideo(lawyerUser.userId, 3);
-                            lawyerVideoPlayer.style.width = '50%';
-                            lawyerVideoPlayer.style.height = '100%';
+                            lawyerVideoPlayer.style.width = '45%';
+                            lawyerVideoPlayer.style.height = '550px';
                             lawyerVideoPlayer.style.border = '4px solid #3b82f6';
                             lawyerVideoPlayer.style.borderRadius = '0.5rem';
                             lawyerVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-                            lawyerVideoPlayer.style.margin = '0 0.5rem';
-                            selfVideoWrapper.appendChild(lawyerVideoPlayer);
+                            lawyerVideoPlayer.style.flexShrink = '0';
+                            lawyerVideoPlayer.style.objectFit = 'cover';
+                            container.appendChild(lawyerVideoPlayer);
                             log('✓ Lawyer video attached');
                         }
                     }
@@ -281,18 +258,19 @@
                     if (videoStatus === 'Active') {
                         try {
                             const remoteVideoPlayer = await stream.attachVideo(remoteUserId, 3);
-                            remoteVideoPlayer.style.width = '50%';
-                            remoteVideoPlayer.style.height = '100%';
+                            remoteVideoPlayer.style.width = '45%';
+                            remoteVideoPlayer.style.height = '550px';
                             remoteVideoPlayer.style.border = '4px solid #3b82f6';
                             remoteVideoPlayer.style.borderRadius = '0.5rem';
                             remoteVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-                            remoteVideoPlayer.style.margin = '0 0.5rem';
-                            selfVideoWrapper.appendChild(remoteVideoPlayer);
+                            remoteVideoPlayer.style.flexShrink = '0';
+                            remoteVideoPlayer.style.objectFit = 'cover';
+                            container.appendChild(remoteVideoPlayer);
                             log(`✓ Lawyer video attached`);
                         } catch (err) {
                             log(`ERROR attaching lawyer video: ${err.message}`);
                         }
-                    } else if (videoStatus === 'Inactive') {
+                    }else if (videoStatus === 'Inactive') {
                         const remoteVideoPlayer = await stream.detachVideo(remoteUserId);
                         if (remoteVideoPlayer) {
                             Array.isArray(remoteVideoPlayer) ? remoteVideoPlayer.forEach(el => el.remove()) : remoteVideoPlayer.remove();
