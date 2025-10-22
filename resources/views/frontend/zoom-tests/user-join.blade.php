@@ -194,7 +194,10 @@
                     const idPrefix = isSelf ? 'self' : 'remote';
                     let existingElement = document.getElementById(`${idPrefix}-video-element-${userId}`);
                     
-                    if (existingElement) return existingElement;
+                    if (existingElement) {
+                        log(`Reusing existing ${existingElement.tagName} element for user ${userId}`);
+                        return existingElement;
+                    }
                     
                     const videoWrapper = document.createElement("div");
                     videoWrapper.id = `${idPrefix}-video-wrapper-${userId}`;
@@ -212,6 +215,8 @@
                     
                     videoWrapper.appendChild(videoElement);
                     container.appendChild(videoWrapper);
+                    
+                    log(`Created ${videoElement.tagName} element for user ${userId} (isSelf: ${isSelf})`);
                     return videoElement;
                 };
 
