@@ -137,6 +137,33 @@
                 </div>
             </div>
 
+            <div class="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl shadow-lg p-8 mb-8 border-2 border-orange-300">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4 text-center">🎯 Real Meeting Flow</h2>
+                <p class="text-center text-gray-600 mb-6">Lawyer starts meeting → User joins with meeting ID</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <div class="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 mx-auto">
+                            <span class="text-3xl">👨‍⚖️</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">Lawyer - Start Meeting</h3>
+                        <p class="text-sm text-gray-600 mb-4 text-center">Create a meeting and share the ID with your client</p>
+                        <a href="{{ route('zoom.test.lawyer-meeting') }}" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors duration-200">
+                            Start as Lawyer
+                        </a>
+                    </div>
+                    <div class="bg-white rounded-lg p-6 shadow-md">
+                        <div class="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 mx-auto">
+                            <span class="text-3xl">👤</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-3 text-center">User - Join Meeting</h3>
+                        <p class="text-sm text-gray-600 mb-4 text-center">Enter the meeting ID from your lawyer to join</p>
+                        <a href="{{ route('zoom.test.user-join') }}" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors duration-200">
+                            Join as User
+                        </a>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">How to Test</h2>
                 <div class="space-y-4 text-gray-600">
