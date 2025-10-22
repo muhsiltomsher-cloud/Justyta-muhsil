@@ -219,7 +219,7 @@
                     return videoElement;
                 };
 
-                const selfVideoElement = createVideoElement(currentUserId, true);
+                const selfVideoWrapper = document.getElementById('videoContainer');
 
                 log('Starting video and audio...');
                 await stream.startVideo();
@@ -228,16 +228,22 @@
 
                 startCallTimer();
 
-                log('Rendering lawyer video...');
-                await stream.renderVideo(selfVideoElement, currentUserId, 1280, 720, 0, 0, 3);
-                log('✓ Lawyer video rendered');
+                log('Attaching lawyer video...');
+                const selfVideoPlayer = await stream.attachVideo(currentUserId, 3);
+                selfVideoPlayer.style.width = '50%';
+                selfVideoPlayer.style.height = '100%';
+                selfVideoPlayer.style.border = '4px solid #3b82f6';
+                selfVideoPlayer.style.borderRadius = '0.5rem';
+                selfVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+                selfVideoPlayer.style.margin = '0 0.5rem';
+                selfVideoWrapper.appendChild(selfVideoPlayer);
+                log('✓ Lawyer video attached');
 
                 client.on('user-added', async (payload) => {
                     const remoteUser = payload.user || payload;
                     if (remoteUser.userId === currentUserId) return;
                     log('🎉 Client joined: ' + remoteUser.userId);
                     document.getElementById('clientStatus').textContent = 'Client connected!';
-                    createVideoElement(remoteUser.userId, false);
                 });
 
                 client.on('user-video-status-change', async (payload) => {
@@ -250,16 +256,25 @@
                     log(`Client video status: ${videoStatus}`);
 
                     if (videoStatus === 'Active') {
-                        const remoteVideoCanvas = createVideoElement(remoteUserId, false);
                         try {
-                            await stream.renderVideo(remoteVideoCanvas, remoteUserId, 1280, 720, 0, 0, 3);
-                            log(`✓ Client video rendered`);
+                            const remoteVideoPlayer = await stream.attachVideo(remoteUserId, 3);
+                            remoteVideoPlayer.style.width = '50%';
+                            remoteVideoPlayer.style.height = '100%';
+                            remoteVideoPlayer.style.border = '4px solid #10b981';
+                            remoteVideoPlayer.style.borderRadius = '0.5rem';
+                            remoteVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+                            remoteVideoPlayer.style.margin = '0 0.5rem';
+                            selfVideoWrapper.appendChild(remoteVideoPlayer);
+                            log(`✓ Client video attached`);
                         } catch (err) {
-                            log(`ERROR rendering client video: ${err.message}`);
+                            log(`ERROR attaching client video: ${err.message}`);
                         }
                     } else if (videoStatus === 'Inactive') {
-                        await stream.stopRenderVideo(remoteUserId);
-                        log(`Client video stopped`);
+                        const remoteVideoPlayer = await stream.detachVideo(remoteUserId);
+                        if (remoteVideoPlayer) {
+                            Array.isArray(remoteVideoPlayer) ? remoteVideoPlayer.forEach(el => el.remove()) : remoteVideoPlayer.remove();
+                        }
+                        log(`Client video detached`);
                     }
                 });
 
@@ -269,10 +284,9 @@
                     log('Client left: ' + remoteUserId);
                     document.getElementById('clientStatus').textContent = 'Waiting for client...';
 
-                    const remoteVideoWrapper = document.getElementById(`remote-video-wrapper-${remoteUserId}`);
-                    if (remoteVideoWrapper) {
-                        await stream.stopRenderVideo(remoteUserId);
-                        remoteVideoWrapper.remove();
+                    const remoteVideoPlayer = await stream.detachVideo(remoteUserId);
+                    if (remoteVideoPlayer) {
+                        Array.isArray(remoteVideoPlayer) ? remoteVideoPlayer.forEach(el => el.remove()) : remoteVideoPlayer.remove();
                     }
                 });
 
@@ -344,8 +358,6 @@
                 try {
                     log('Leaving meeting...');
                     stopCallTimer();
-                    const currentUserId = client.getCurrentUserInfo().userId;
-                    await stream.stopRenderVideo(currentUserId);
                     await stream.stopVideo();
                     await stream.stopAudio();
                     await client.leave();
