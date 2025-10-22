@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zoom Test - Method 1 (Current SDK 2.15.0)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://source.zoom.us/videosdk/2.15.0/lib.js"></script>
+    <script src="https://source.zoom.us/videosdk/2.15.0/lib.js" onerror="loadLocalSDK()"></script>
+    <script>
+        function loadLocalSDK() {
+            console.log('CDN failed, trying local SDK...');
+            const script = document.createElement('script');
+            script.src = '/zoom-sdk/lib.js';
+            script.onerror = function() {
+                console.error('Local SDK also failed to load. Please check ZOOM_SDK_SETUP.md');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
 </head>
 <body class="bg-gray-100" onload="checkZoomSDK()">
     <div class="container mx-auto px-4 py-8">
