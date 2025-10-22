@@ -387,9 +387,19 @@
             const script = document.createElement('script');
             script.src = '/zoom-sdk/lib.js';
             script.onload = function() {
-                sdkLoaded = true;
-                log('✓ Zoom SDK loaded successfully');
-                log('Ready to join meeting');
+                if (typeof WebVideoSDK !== 'undefined' && WebVideoSDK.default) {
+                    window.ZoomVideo = WebVideoSDK.default;
+                    log('✓ Zoom SDK loaded successfully (WebVideoSDK.default)');
+                    sdkLoaded = true;
+                    log('Ready to join meeting');
+                } else if (typeof ZoomVideo !== 'undefined') {
+                    log('✓ Zoom SDK loaded as global ZoomVideo');
+                    sdkLoaded = true;
+                    log('Ready to join meeting');
+                } else {
+                    log('ERROR: Zoom SDK loaded but ZoomVideo/WebVideoSDK not found');
+                    log('Available window properties: ' + Object.keys(window).filter(k => k.toLowerCase().includes('zoom') || k.toLowerCase().includes('video')).join(', '));
+                }
             };
             script.onerror = function() {
                 log('ERROR: Failed to load Zoom SDK from /zoom-sdk/lib.js');
