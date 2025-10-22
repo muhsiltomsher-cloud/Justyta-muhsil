@@ -220,7 +220,7 @@
                     return videoElement;
                 };
 
-                const selfVideoElement = createVideoElement(currentUserId, true);
+                const selfVideoWrapper = document.getElementById('videoContainer');
 
                 log('Starting video and audio...');
                 await stream.startVideo();
@@ -229,9 +229,16 @@
 
                 startCallTimer();
 
-                log('Rendering user video...');
-                await stream.renderVideo(selfVideoElement, currentUserId, 1280, 720, 0, 0, 3);
-                log('✓ User video rendered');
+                log('Attaching user video...');
+                const selfVideoPlayer = await stream.attachVideo(currentUserId, 3);
+                selfVideoPlayer.style.width = '50%';
+                selfVideoPlayer.style.height = '100%';
+                selfVideoPlayer.style.border = '4px solid #10b981';
+                selfVideoPlayer.style.borderRadius = '0.5rem';
+                selfVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+                selfVideoPlayer.style.margin = '0 0.5rem';
+                selfVideoWrapper.appendChild(selfVideoPlayer);
+                log('✓ User video attached');
 
                 const existingUsers = client.getAllUser();
                 log(`Found ${existingUsers.length} participants in meeting`);
@@ -241,11 +248,17 @@
                     if (lawyerUser) {
                         log('✓ Lawyer is already in the meeting');
                         const userInfo = client.getUser(lawyerUser.userId);
-                        const lawyerVideoElement = createVideoElement(lawyerUser.userId, false);
 
                         if (userInfo?.bVideoOn) {
-                            await stream.renderVideo(lawyerVideoElement, lawyerUser.userId, 1280, 720, 0, 0, 3);
-                            log('✓ Lawyer video rendered');
+                            const lawyerVideoPlayer = await stream.attachVideo(lawyerUser.userId, 3);
+                            lawyerVideoPlayer.style.width = '50%';
+                            lawyerVideoPlayer.style.height = '100%';
+                            lawyerVideoPlayer.style.border = '4px solid #3b82f6';
+                            lawyerVideoPlayer.style.borderRadius = '0.5rem';
+                            lawyerVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+                            lawyerVideoPlayer.style.margin = '0 0.5rem';
+                            selfVideoWrapper.appendChild(lawyerVideoPlayer);
+                            log('✓ Lawyer video attached');
                         }
                     }
                 }
@@ -254,7 +267,6 @@
                     const remoteUser = payload.user || payload;
                     if (remoteUser.userId === currentUserId) return;
                     log('Lawyer joined: ' + remoteUser.userId);
-                    createVideoElement(remoteUser.userId, false);
                 });
 
                 client.on('user-video-status-change', async (payload) => {
@@ -267,16 +279,25 @@
                     log(`Lawyer video status: ${videoStatus}`);
 
                     if (videoStatus === 'Active') {
-                        const remoteVideoCanvas = createVideoElement(remoteUserId, false);
                         try {
-                            await stream.renderVideo(remoteVideoCanvas, remoteUserId, 1280, 720, 0, 0, 3);
-                            log(`✓ Lawyer video rendered`);
+                            const remoteVideoPlayer = await stream.attachVideo(remoteUserId, 3);
+                            remoteVideoPlayer.style.width = '50%';
+                            remoteVideoPlayer.style.height = '100%';
+                            remoteVideoPlayer.style.border = '4px solid #3b82f6';
+                            remoteVideoPlayer.style.borderRadius = '0.5rem';
+                            remoteVideoPlayer.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
+                            remoteVideoPlayer.style.margin = '0 0.5rem';
+                            selfVideoWrapper.appendChild(remoteVideoPlayer);
+                            log(`✓ Lawyer video attached`);
                         } catch (err) {
-                            log(`ERROR rendering lawyer video: ${err.message}`);
+                            log(`ERROR attaching lawyer video: ${err.message}`);
                         }
                     } else if (videoStatus === 'Inactive') {
-                        await stream.stopRenderVideo(remoteUserId);
-                        log(`Lawyer video stopped`);
+                        const remoteVideoPlayer = await stream.detachVideo(remoteUserId);
+                        if (remoteVideoPlayer) {
+                            Array.isArray(remoteVideoPlayer) ? remoteVideoPlayer.forEach(el => el.remove()) : remoteVideoPlayer.remove();
+                        }
+                        log(`Lawyer video detached`);
                     }
                 });
 
@@ -285,10 +306,9 @@
                     const remoteUserId = remoteUser.userId;
                     log('Lawyer left: ' + remoteUserId);
 
-                    const remoteVideoWrapper = document.getElementById(`remote-video-wrapper-${remoteUserId}`);
-                    if (remoteVideoWrapper) {
-                        await stream.stopRenderVideo(remoteUserId);
-                        remoteVideoWrapper.remove();
+                    const remoteVideoPlayer = await stream.detachVideo(remoteUserId);
+                    if (remoteVideoPlayer) {
+                        Array.isArray(remoteVideoPlayer) ? remoteVideoPlayer.forEach(el => el.remove()) : remoteVideoPlayer.remove();
                     }
                 });
 
@@ -360,8 +380,6 @@
                 try {
                     log('Leaving meeting...');
                     stopCallTimer();
-                    const currentUserId = client.getCurrentUserInfo().userId;
-                    await stream.stopRenderVideo(currentUserId);
                     await stream.stopVideo();
                     await stream.stopAudio();
                     await client.leave();
