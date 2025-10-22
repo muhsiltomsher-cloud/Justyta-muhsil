@@ -197,8 +197,35 @@ Route::prefix('user')->middleware(['auth:frontend', 'checkFrontendUserType:user'
     Route::get('/search-services', [UserController::class, 'searchService'])->name('user.search.services');
 });
 
+Route::prefix('zoom-test')->group(function () {
+    Route::get('/', function () {
+        return view('frontend.zoom-tests.index');
+    })->name('zoom.test.index');
+    
+    Route::get('/method1', function () {
+        return view('frontend.zoom-tests.method1');
+    })->name('zoom.test.method1');
+    
+    Route::get('/method2', function () {
+        return view('frontend.zoom-tests.method2');
+    })->name('zoom.test.method2');
+    
+    Route::get('/method3', function () {
+        return view('frontend.zoom-tests.method3');
+    })->name('zoom.test.method3');
+});
 
-
+Route::post('/api/zoom/generate-signature', function (Illuminate\Http\Request $request) {
+    $meetingNumber = $request->input('meeting_number');
+    $role = $request->input('role', 0);
+    
+    $signature = generateZoomSignature($meetingNumber, 'test-user-' . time(), $role);
+    
+    return response()->json([
+        'status' => true,
+        'signature' => $signature
+    ]);
+})->name('api.zoom.signature');
 
 Route::get('/lang/{lang}', function ($lang) {
     if (in_array($lang, ['en', 'ar', 'fr', 'fa', 'ru', 'zh'])) {
