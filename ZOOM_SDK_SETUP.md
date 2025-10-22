@@ -15,17 +15,24 @@ This error occurs when the Zoom SDK script cannot load from the CDN (`https://so
 
 ### Step 1: Download Zoom SDK Manually
 
-Since the CDN may be blocked, you need to download the SDK file manually:
+Since the CDN is blocked, you need to download the SDK file manually:
 
-**Option A: Download from a different network**
-1. Use a different internet connection (mobile hotspot, home network, etc.)
-2. Open this URL in your browser: `https://source.zoom.us/videosdk/2.15.0/lib.js`
-3. Save the file (Right-click → Save As)
-
-**Option B: Use Zoom's official download**
+**Option A: Download from Zoom Developer Portal (RECOMMENDED)**
 1. Visit: https://developers.zoom.us/docs/video-sdk/web/
-2. Download the Web SDK package
-3. Extract the `lib.js` file
+2. Click "Download" or "Get Started"
+3. Sign in with Zoom account (or create free account)
+4. Download the Web Video SDK package (ZIP file)
+5. Extract the ZIP file
+6. Find `lib/index.js` or `dist/lib.js` in the extracted folder
+7. Rename it to `lib.js`
+
+**Option B: Use GitHub Release**
+1. Visit: https://github.com/zoom/videosdk-web-sample
+2. Look for releases or sample code
+3. Download the SDK file from the repository
+
+**Option C: Contact Zoom Support**
+If you have a Zoom Video SDK subscription, contact Zoom support to get the SDK file directly.
 
 ### Step 2: Place SDK in Your Project
 
