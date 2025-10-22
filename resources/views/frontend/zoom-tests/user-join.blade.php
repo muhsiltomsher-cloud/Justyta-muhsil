@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User - Join Meeting</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Zoom SDK directly from local file -->
-    <script src="/zoom-sdk/lib.js"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100" onload="initPage()">
     <div class="container mx-auto px-4 py-8">
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h1 class="text-3xl font-bold mb-4 text-green-600">👤 User - Join Meeting</h1>
@@ -378,7 +376,27 @@
             }
         }
 
-        log('👤 User Join Page loaded - Ready to join meeting');
+        let sdkLoaded = false;
+
+        function initPage() {
+            log('👤 User Join Page loaded - Loading Zoom SDK...');
+            loadZoomSDK();
+        }
+
+        function loadZoomSDK() {
+            const script = document.createElement('script');
+            script.src = '/zoom-sdk/lib.js';
+            script.onload = function() {
+                sdkLoaded = true;
+                log('✓ Zoom SDK loaded successfully');
+                log('Ready to join meeting');
+            };
+            script.onerror = function() {
+                log('ERROR: Failed to load Zoom SDK from /zoom-sdk/lib.js');
+                log('Please ensure the SDK file exists in public/zoom-sdk/');
+            };
+            document.head.appendChild(script);
+        }
     </script>
 </body>
 </html>
