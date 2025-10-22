@@ -189,21 +189,27 @@
                 container.innerHTML = '';
                 container.className = 'flex justify-center items-center h-[600px] w-full p-4 bg-black rounded relative';
 
-                const createVideoWrapper = (userId, isSelf = false) => {
+                const createVideoElement = (userId, isSelf = false) => {
                     const idPrefix = isSelf ? 'self' : 'remote';
-                    let videoWrapper = document.getElementById(`${idPrefix}-video-wrapper-${userId}`);
+                    let existingCanvas = document.getElementById(`${idPrefix}-video-canvas-${userId}`);
                     
-                    if (videoWrapper) return videoWrapper;
+                    if (existingCanvas) return existingCanvas;
                     
-                    videoWrapper = document.createElement("div");
+                    const videoWrapper = document.createElement("div");
                     videoWrapper.id = `${idPrefix}-video-wrapper-${userId}`;
                     const borderColor = isSelf ? 'border-blue-500' : 'border-green-500';
                     videoWrapper.className = `w-1/2 h-full rounded-lg shadow-xl mx-2 border-4 ${borderColor} overflow-hidden relative`;
+                    
+                    const canvas = document.createElement("canvas");
+                    canvas.id = `${idPrefix}-video-canvas-${userId}`;
+                    canvas.className = 'w-full h-full object-contain';
+                    
+                    videoWrapper.appendChild(canvas);
                     container.appendChild(videoWrapper);
-                    return videoWrapper;
+                    return canvas;
                 };
 
-                const selfVideoWrapper = createVideoWrapper(currentUserId, true);
+                const selfVideoCanvas = createVideoElement(currentUserId, true);
 
                 log('Starting video and audio...');
                 await stream.startVideo();
@@ -213,7 +219,7 @@
                 startCallTimer();
 
                 log('Rendering lawyer video...');
-                await stream.renderVideo(selfVideoWrapper, currentUserId, VIEW_MODE_CONTAIN);
+                await stream.renderVideo(selfVideoCanvas, currentUserId, 1280, 720, 0, 0, 3);
                 log('✓ Lawyer video rendered');
 
                 client.on('user-added', async (payload) => {
@@ -221,7 +227,7 @@
                     if (remoteUser.userId === currentUserId) return;
                     log('🎉 Client joined: ' + remoteUser.userId);
                     document.getElementById('clientStatus').textContent = 'Client connected!';
-                    createVideoWrapper(remoteUser.userId, false);
+                    createVideoElement(remoteUser.userId, false);
                 });
 
                 client.on('user-video-status-change', async (payload) => {
@@ -234,9 +240,9 @@
                     log(`Client video status: ${videoStatus}`);
 
                     if (videoStatus === 'Active') {
-                        const remoteVideoWrapper = createVideoWrapper(remoteUserId, false);
+                        const remoteVideoCanvas = createVideoElement(remoteUserId, false);
                         try {
-                            await stream.renderVideo(remoteVideoWrapper, remoteUserId, VIEW_MODE_CONTAIN);
+                            await stream.renderVideo(remoteVideoCanvas, remoteUserId, 1280, 720, 0, 0, 3);
                             log(`✓ Client video rendered`);
                         } catch (err) {
                             log(`ERROR rendering client video: ${err.message}`);
