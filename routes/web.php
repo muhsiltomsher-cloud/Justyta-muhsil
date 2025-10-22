@@ -213,6 +213,14 @@ Route::prefix('zoom-test')->group(function () {
     Route::get('/method3', function () {
         return view('frontend.zoom-tests.method3');
     })->name('zoom.test.method3');
+    
+    Route::get('/lawyer-meeting', function () {
+        return view('frontend.zoom-tests.lawyer-meeting');
+    })->name('zoom.test.lawyer-meeting');
+    
+    Route::get('/user-join', function () {
+        return view('frontend.zoom-tests.user-join');
+    })->name('zoom.test.user-join');
 });
 
 Route::post('/api/zoom/generate-signature', function (Illuminate\Http\Request $request) {
