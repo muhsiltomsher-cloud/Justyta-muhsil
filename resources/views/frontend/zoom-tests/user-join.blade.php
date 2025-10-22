@@ -190,21 +190,27 @@
                 container.innerHTML = '';
                 container.className = 'flex justify-center items-center h-[600px] w-full p-4 bg-black rounded relative';
 
-                const createVideoWrapper = (userId, isSelf = false) => {
+                const createVideoElement = (userId, isSelf = false) => {
                     const idPrefix = isSelf ? 'self' : 'remote';
-                    let videoWrapper = document.getElementById(`${idPrefix}-video-wrapper-${userId}`);
+                    let existingCanvas = document.getElementById(`${idPrefix}-video-canvas-${userId}`);
                     
-                    if (videoWrapper) return videoWrapper;
+                    if (existingCanvas) return existingCanvas;
                     
-                    videoWrapper = document.createElement("div");
+                    const videoWrapper = document.createElement("div");
                     videoWrapper.id = `${idPrefix}-video-wrapper-${userId}`;
                     const borderColor = isSelf ? 'border-green-500' : 'border-blue-500';
                     videoWrapper.className = `w-1/2 h-full rounded-lg shadow-xl mx-2 border-4 ${borderColor} overflow-hidden relative`;
+                    
+                    const canvas = document.createElement("canvas");
+                    canvas.id = `${idPrefix}-video-canvas-${userId}`;
+                    canvas.className = 'w-full h-full object-contain';
+                    
+                    videoWrapper.appendChild(canvas);
                     container.appendChild(videoWrapper);
-                    return videoWrapper;
+                    return canvas;
                 };
 
-                const selfVideoWrapper = createVideoWrapper(currentUserId, true);
+                const selfVideoCanvas = createVideoElement(currentUserId, true);
 
                 log('Starting video and audio...');
                 await stream.startVideo();
@@ -214,7 +220,7 @@
                 startCallTimer();
 
                 log('Rendering user video...');
-                await stream.renderVideo(selfVideoWrapper, currentUserId, VIEW_MODE_CONTAIN);
+                await stream.renderVideo(selfVideoCanvas, currentUserId, 1280, 720, 0, 0, 3);
                 log('✓ User video rendered');
 
                 const existingUsers = client.getAllUser();
@@ -225,10 +231,10 @@
                     if (lawyerUser) {
                         log('✓ Lawyer is already in the meeting');
                         const userInfo = client.getUser(lawyerUser.userId);
-                        const lawyerVideoWrapper = createVideoWrapper(lawyerUser.userId, false);
+                        const lawyerVideoCanvas = createVideoElement(lawyerUser.userId, false);
 
                         if (userInfo?.bVideoOn) {
-                            await stream.renderVideo(lawyerVideoWrapper, lawyerUser.userId, VIEW_MODE_CONTAIN);
+                            await stream.renderVideo(lawyerVideoCanvas, lawyerUser.userId, 1280, 720, 0, 0, 3);
                             log('✓ Lawyer video rendered');
                         }
                     }
@@ -238,7 +244,7 @@
                     const remoteUser = payload.user || payload;
                     if (remoteUser.userId === currentUserId) return;
                     log('Lawyer joined: ' + remoteUser.userId);
-                    createVideoWrapper(remoteUser.userId, false);
+                    createVideoElement(remoteUser.userId, false);
                 });
 
                 client.on('user-video-status-change', async (payload) => {
@@ -251,9 +257,9 @@
                     log(`Lawyer video status: ${videoStatus}`);
 
                     if (videoStatus === 'Active') {
-                        const remoteVideoWrapper = createVideoWrapper(remoteUserId, false);
+                        const remoteVideoCanvas = createVideoElement(remoteUserId, false);
                         try {
-                            await stream.renderVideo(remoteVideoWrapper, remoteUserId, VIEW_MODE_CONTAIN);
+                            await stream.renderVideo(remoteVideoCanvas, remoteUserId, 1280, 720, 0, 0, 3);
                             log(`✓ Lawyer video rendered`);
                         } catch (err) {
                             log(`ERROR rendering lawyer video: ${err.message}`);
